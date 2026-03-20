@@ -8,6 +8,7 @@ __pycache__/
 
 # Environment — NEVER commit
 .env
+.env.production
 
 # Build / dist
 *.egg-info/
