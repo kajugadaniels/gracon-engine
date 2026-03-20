@@ -1,0 +1,17 @@
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Never copy secrets into the image
+.env
+.env.*
+
+# Source control
+.git
+.gitignore
+
+# Dev tooling
+*.log
+.DS_Store
