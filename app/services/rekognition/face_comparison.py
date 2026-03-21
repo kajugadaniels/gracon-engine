@@ -18,35 +18,36 @@ class FaceComparisonResult:
     error: Optional[str] = None # set if AWS call failed
 
 
+def _download_image_bytes(s3_client, bucket: str, key: str) -> bytes:
+    """Downloads an image from S3 and returns its raw bytes."""
+    response = s3_client.get_object(Bucket=bucket, Key=key)
+    return response["Body"].read()
+
+
 def compare_faces(id_image_key: str, selfie_image_key: str) -> FaceComparisonResult:
     """
     Compares the face on an ID card photo against a selfie using
     AWS Rekognition CompareFaces API.
 
-    Both images are referenced by their S3 keys — Rekognition pulls
-    them directly from S3 using the engine's IAM permissions.
+    Images are downloaded from S3 (eu-north-1) as bytes and passed
+    directly to Rekognition (eu-west-1) — required because Rekognition
+    S3Object references only work when the bucket and Rekognition endpoint
+    are in the same region.
 
     Returns a FaceComparisonResult with similarity score and quality flags.
     """
     settings = get_settings()
     rekognition = get_rekognition_client()
+    s3 = get_s3_client()
 
     try:
+        # Download images from S3 then pass bytes — avoids cross-region S3Object restriction
+        id_image_bytes = _download_image_bytes(s3, settings.AWS_S3_BUCKET_NAME, id_image_key)
+        selfie_bytes = _download_image_bytes(s3, settings.AWS_S3_BUCKET_NAME, selfie_image_key)
+
         response = rekognition.compare_faces(
-            SourceImage={
-                # ID card photo — the reference face
-                "S3Object": {
-                    "Bucket": settings.AWS_S3_BUCKET_NAME,
-                    "Name": id_image_key,
-                }
-            },
-            TargetImage={
-                # Selfie — the face to compare against
-                "S3Object": {
-                    "Bucket": settings.AWS_S3_BUCKET_NAME,
-                    "Name": selfie_image_key,
-                }
-            },
+            SourceImage={"Bytes": id_image_bytes},
+            TargetImage={"Bytes": selfie_bytes},
             SimilarityThreshold=0,   # return all matches, we apply our own threshold
             QualityFilter="MEDIUM",  # filter out very low quality face detections
         )
