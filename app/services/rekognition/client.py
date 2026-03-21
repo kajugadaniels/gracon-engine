@@ -9,24 +9,19 @@ from app.core.logging import logger
 def get_rekognition_client():
     """
     Creates and caches a single Rekognition client for the app lifetime.
-
-    lru_cache ensures boto3 client is only instantiated once —
-    boto3 clients are thread-safe and expensive to create repeatedly.
-
-    Config options:
-    - retries: auto-retry on transient AWS errors (throttle, 5xx)
-    - connect_timeout / read_timeout: prevents hanging on slow responses
+    Uses REKOGNITION_REGION — separate from AWS_REGION (S3) because
+    Rekognition is not available in all regions (e.g. eu-north-1).
     """
     settings = get_settings()
 
     config = Config(
         region_name=settings.AWS_REGION,
         retries={
-            "max_attempts": 3,       # retry up to 3 times on transient failures
-            "mode": "adaptive",      # adaptive mode backs off intelligently
+            "max_attempts": 3,
+            "mode": "adaptive",
         },
-        connect_timeout=5,           # 5s to establish connection
-        read_timeout=30,             # 30s to wait for response (Rekognition can be slow)
+        connect_timeout=5,
+        read_timeout=30,
     )
 
     client = boto3.client(
