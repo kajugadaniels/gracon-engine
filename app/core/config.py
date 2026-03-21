@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Internal security — NestJS gateway must send this key in every request
     ENGINE_API_KEY: str
 
-    # AWS credentials — used for both S3 and Rekognition
+    # AWS credentials
     AWS_REGION: str
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: str
