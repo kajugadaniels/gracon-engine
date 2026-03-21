@@ -15,32 +15,29 @@ class LivenessResult:
     error: Optional[str] = None
 
 
+def _download_image_bytes(s3_client, bucket: str, key: str) -> bytes:
+    """Downloads an image from S3 and returns its raw bytes."""
+    response = s3_client.get_object(Bucket=bucket, Key=key)
+    return response["Body"].read()
+
+
 def check_liveness(selfie_image_key: str) -> LivenessResult:
     """
     Performs liveness detection on a selfie image using AWS Rekognition.
 
-    We use DetectFaces with quality analysis to assess liveness signals:
-    - Face pose (is the person looking at the camera)
-    - Eye open probability (are eyes open — closed = likely photo)
-    - Image sharpness and brightness
-    - Face confidence score
-
-    Note: For production at scale, consider migrating to Rekognition
-    FaceLiveness which provides a dedicated liveness session with
-    active challenge (blink, turn head). This approach works for
-    server-side image analysis without a live session.
+    Image is downloaded from S3 (eu-north-1) as bytes and passed directly
+    to Rekognition (eu-west-1) — required because Rekognition S3Object
+    references only work when bucket and Rekognition are in the same region.
     """
     settings = get_settings()
     rekognition = get_rekognition_client()
+    s3 = get_s3_client()
 
     try:
+        selfie_bytes = _download_image_bytes(s3, settings.AWS_S3_BUCKET_NAME, selfie_image_key)
+
         response = rekognition.detect_faces(
-            Image={
-                "S3Object": {
-                    "Bucket": settings.AWS_S3_BUCKET_NAME,
-                    "Name": selfie_image_key,
-                }
-            },
+            Image={"Bytes": selfie_bytes},
             Attributes=["ALL"],  # include all face attributes for full liveness analysis
         )
 
