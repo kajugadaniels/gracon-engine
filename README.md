@@ -54,11 +54,18 @@ main.py            app factory and startup wiring
 
 ```text
 engine/
+  agents/
   app/
   main.py
   requirements.txt
   .env.example
 ```
+
+## AI Agent Rules
+
+Project-local AI guidance lives in `agents/README.md`.
+
+Read that guide before changing verification-job routing, API-key validation, S3 retrieval, AWS Rekognition integration, scoring thresholds, production docs behavior, or privacy-sensitive logging. The agent guide is intentionally specific to this internal engine so contributors preserve biometric privacy, internal-only service boundaries, and deterministic pass/fail scoring.
 
 ## Local Commands
 
@@ -104,4 +111,3 @@ COMPOSITE_PASS_THRESHOLD=80.0
 - Preserve internal-only assumptions
 - Treat every new log line as a privacy decision
 - Test error handling and production docs disabling when adding endpoints
-
